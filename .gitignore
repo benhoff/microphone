@@ -2,7 +2,3 @@ __pycache__
 scratch.py
 env
 *.swp
-settings.yml
-ghostdriver.log
-client_secrets.json
-*-oauth2.json
