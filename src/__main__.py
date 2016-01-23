@@ -1,5 +1,7 @@
 import argparse
 
+from .mic import Mic
+
 def main(args=None):
     parser = argparse.ArgumentParser(prog='Vex',
                                      description='Speech to text using PyAudio and choice of speech analyzer')
