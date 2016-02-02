@@ -28,5 +28,7 @@ setup(
     keywords='sound capture to text',
     author='Ben Hoff',
     author_email='beohoff@gmail.com',
+    entry_points={'microphone.audioengines': ['pyaudio' = 'microphone.audioengines.pyaudio-ae',
+                                              'base' = 'microphone.audioengine']}
     packages= find_packages(), # exclude=['docs', 'tests']
 )

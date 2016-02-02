@@ -3,6 +3,7 @@ import contextlib
 import re
 import slugify
 import pyaudio
+from microphone.audioengine_plugin import AudioEnginePlugin
 
 PYAUDIO_BIT_MAPPING = {8:  pyaudio.paInt8,
                        16: pyaudio.paInt16,
