@@ -21,14 +21,16 @@ setup(
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
-        'Topic :: Multimedia :: Sound/Audio :: Analysis',
         'Topic :: Multimedia :: Sound/Audio :: Capture/Recording',
         'Topic :: Utilities',
         'Operating System :: OS Independent'],
     keywords='sound capture to text',
     author='Ben Hoff',
     author_email='beohoff@gmail.com',
-    entry_points={'microphone.audioengines': ['pyaudio' = 'microphone.audioengines.pyaudio-ae',
+    entry_points={'microphone.audioengines': ['pyaudio' = 'microphone.audioengines.pyaudio_ae',
                                               'base' = 'microphone.audioengine']}
     packages= find_packages(), # exclude=['docs', 'tests']
+    extras_require={
+        'dev': ['flake8']
+        },
 )

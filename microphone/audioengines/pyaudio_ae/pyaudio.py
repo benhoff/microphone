@@ -1,9 +1,8 @@
 import logging
 import contextlib
 import re
-import slugify
 import pyaudio
-from microphone.audioengine_plugin import AudioEnginePlugin
+from microphone import AudioEnginePlugin, AudioEngineDevice
 
 PYAUDIO_BIT_MAPPING = {8:  pyaudio.paInt8,
                        16: pyaudio.paInt16,
@@ -16,9 +15,9 @@ def bits_to_samplefmt(bits):
         return PYAUDIO_BIT_MAPPING[bits]
 
 
-class PyAudioEnginePlugin(plugin.AudioEnginePlugin):
-    def __init__(self, *args, **kwargs):
-        super(PyAudioEnginePlugin, self).__init__(*args, **kwargs)
+class PyAudioEnginePlugin(AudioEnginePlugin):
+    def __init__(self):
+        super().__init__()
         self._logger = logging.getLogger(__name__)
         self._logger.info("Initializing PyAudio. ALSA/Jack error messages " +
                           "that pop up during this process are normal and " +
@@ -29,22 +28,24 @@ class PyAudioEnginePlugin(plugin.AudioEnginePlugin):
     def __del__(self):
         self._pyaudio.terminate()
 
-    def get_devices(self, device_type=plugin.audioengine.DEVICE_TYPE_ALL):
+    def get_devices(self, device_type='all'):
         num_devices = self._pyaudio.get_device_count()
         self._logger.debug('Found %d PyAudio devices', num_devices)
         devs = [PyAudioDevice(self, self._pyaudio.get_device_info_by_index(i))
                 for i in range(num_devices)]
+        return devs
+        """
         if device_type == plugin.audioengine.DEVICE_TYPE_ALL:
             return devs
         else:
             return [device for device in devs if device_type in device.types]
+        """
 
-    def get_default_device(self, output=True):
+    def get_default_device(self):
         try:
-            if output:
-                info = self._pyaudio.get_default_output_device_info()
-            else:
-                info = self._pyaudio.get_default_input_device_info()
+            # if output:
+                # info = self._pyaudio.get_default_output_device_info()
+            info = self._pyaudio.get_default_input_device_info()
         except IOError:
             direction = 'output' if output else 'input'
             devices = self.get_devices(device_type=(
@@ -70,29 +71,15 @@ class PyAudioEnginePlugin(plugin.AudioEnginePlugin):
             "Audio device with slug '%s' not found" % slug)
 
 
-class PyAudioDevice(plugin.audioengine.AudioDevice):
-    RE_PRESLUG = re.compile(r'\(hw:\d,\d\)')
-
+class PyAudioDevice(AudioEngineDevice):
     def __init__(self, engine, info):
-        super(PyAudioDevice, self).__init__(info['name'])
+        super().__init__()
         self._logger = logging.getLogger(__name__)
         self._engine = engine
         self._index = info['index']
         self._max_output_channels = info['maxOutputChannels']
         self._max_input_channels = info['maxInputChannels']
-        # slugify the name
-        preslug_name = self.RE_PRESLUG.sub('', self.name)
-        if preslug_name.endswith(': - '):
-            preslug_name = self.name
-        self._pyaudio_slug = slugify.slugify(preslug_name)
 
-    @property
-    def slug(self):
-        return self._pyaudio_slug
-
-    @property
-    def index(self):
-        return self._index
 
     @property
     def types(self):
