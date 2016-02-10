@@ -11,8 +11,6 @@ from garbage import G
 from _argparser import MicArgParser
 
 
-
-
 def record(self):
     context = zmq.Context()
 
@@ -30,22 +28,6 @@ def record(self):
                 frames.append(audio.record())
 
             publish_socket.send_multipart(frames)
-
-def set_up_device(driver, **kwargs):
-    rate = kwargs.get('rate', _RATE)
-    bits = kwargs.get('bits', _BITS)
-    channels = kwargs.get('channel', _CHANNEL)
-    chunksize = kwargs.get('chunksize', _CHUNKSIZE)
-
-
-def _get_driver(plugins):
-    for plugin in plugins:
-        if plugin.__name__ == driver:
-            return plugin
-
-def set_up_driver(plugin_interface, driver):
-    driver = plugin_interface.get_plugins(_get_driver)
-    return driver()
 
 
 def main(*args, **kwargs):
@@ -69,22 +51,14 @@ def main(*args, **kwargs):
     garbage = G(context)
     reactor = Reactor(context)
 
-    # get the name of the driver specified and instantiate
-    driver = kwargs.get('driver', _DRIVER)
-    driver = set_up_driver(plugin_interface, driver)
-    # now default to setting up a device
-    set_up_device(driver, kwargs)
+    driver = kwargs.get('driver', 'pyaudio')
+    reactor.start_driver(driver)
 
     # now, let's talk on our public face
-    while True:
-        msg = frontend_communication.recv()
+    reactor.run()
 
 
 if __name__ == '__main__':
-    # publish_address = sys.argv[1] if len(sys.argv) > 1 else 'tcp:///*:5555'
-    # response_address = 
     parser = MicArgParser()
     args = parser.parse_args()
-    # TODO: debug
-    print(args)
     main()
