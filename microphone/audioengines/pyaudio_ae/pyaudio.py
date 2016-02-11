@@ -2,6 +2,7 @@ import logging
 import contextlib
 import re
 import pyaudio
+import zmq
 from microphone import AudioEnginePlugin, AudioEngineDevice
 
 PYAUDIO_BIT_MAPPING = {8:  pyaudio.paInt8,
@@ -72,13 +73,17 @@ class PyAudioEnginePlugin(AudioEnginePlugin):
 
 
 class PyAudioDevice(AudioEngineDevice):
-    def __init__(self, engine, info):
+    def __init__(self, engine, info, context=None, address='inproc://microphone')
         super().__init__()
         self._logger = logging.getLogger(__name__)
         self._engine = engine
         self._index = info['index']
         self._max_output_channels = info['maxOutputChannels']
         self._max_input_channels = info['maxInputChannels']
+
+
+    def run(self):
+        pass
 
 
     @property

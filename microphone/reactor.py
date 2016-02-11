@@ -1,4 +1,4 @@
-import re
+from threading import Thread
 import zmq
 from plugin_manager import AudioPluginManager
 
@@ -23,7 +23,7 @@ class InstanceCMD:
 
 class Reactor(object):
     def __init__(self, context=None, **kwargs):
-        context = context or zmq.Context()
+        self._context = context or zmq.Context()
         self.address_frontend = kwargs.get('address_frontend',
                                            'tcp://*:5556')
 
@@ -31,22 +31,14 @@ class Reactor(object):
                                           'inproc://microphone')
 
         # create the public facing communication socket
-        self.frontend_communication = context.socket(zmq.ROUTER)
+        self.frontend_communication = self._context.socket(zmq.ROUTER)
         self.frontend_communication.bind(self.address_frontend)
 
         # create internal communications
-        self.backend_communication = context.socket(zmq.DEALER)
+        self.backend_communication = self._context.socket(zmq.DEALER)
         self.backend_communication.bind(self.address_backend)
         self.plugin_manager = AudioPluginManager()
 
-    def handle_instance_command(self, command, id_):
-        get = self.plugin_manager.get_instances
-
-    def handle_driver_command(self, command, driver):
-        pass
-
-    def handle_metadriver_command(self, command):
-        pass
 
     def run(self):
         frontend = self.frontend_communication
@@ -56,7 +48,7 @@ class Reactor(object):
             cmd_type = frame.pop(0)
             arg = frame.pop()       # optional arg
             cmd = frame.pop()       # cmd
-            # metadriver commands do NOT have a name attr
+            # NOTE: metadriver commands do NOT have a name attr
             name = None
             if not cmd_type == b'metadriver':
                 name = frame.pop()  # name, either driver name or instance id
@@ -64,15 +56,19 @@ class Reactor(object):
                 self.backend_communication.send_multipart([name,
                                                            cmd,
                                                            arg])
+
             elif cmd_type == b'driver':
                 # update
                 # restart
                 # details ?
-                if cmd == b'start':
-                    self.start_driver(arg.decode('utf-8'))
+                if cmd == b'invoke':
+                    self.invoke_device(name.decode('utf-8'),
+                                       arg.decode('utf-8'))
+
                 elif cmd == b'list':
                     self.send_driver_details(name.decode('utf-8'),
                                              args.decode('utf-8'))
+
             elif cmd_type == b'metadriver':
                 pass
 
@@ -89,10 +85,20 @@ class Reactor(object):
         driver = self.plugin_manager.get_plugins(_get_driver(driver))
         device = driver.get_device(device)
 
-    def start_driver(self, driver):
+    def invoke_device(self, driver, instance):
+        """
+        device's are single microphones
+        """
+        driver = self.plugin_manager.get_plugins(_get_driver(driver))
+        device = driver.get_device(instance)
+
+    def invoke_driver(self, driver):
+        """
+        driver's manage multiple devices
+        """
         driver = self.plugin_manager.get_plugins(_get_driver(driver))
         self.plugin_manager.add_plugins(driver())
-        self.frontend_communication.send_multipart([b"driver", b"started"])
+        self.frontend_communication.send_multipart([b"driver", b"invoked"])
 
 def _get_instance(id_):
     def filter_function(instances):
