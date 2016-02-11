@@ -22,10 +22,6 @@ class InstanceCMD:
 
 
 class Reactor(object):
-    CMD_DRIVER = 'microphone.driver.{driver_name}.{cmd}.{arg}'
-    CMD_INSTANCE = 'microphone.instance.{id}.{cmd}.{arg}'
-    CMD_METADRIVER = 'microphone.metadriver.{cmd}.{arg}'
-
     def __init__(self, context=None, **kwargs):
         context = context or zmq.Context()
         self.address_frontend = kwargs.get('address_frontend',
@@ -57,23 +53,46 @@ class Reactor(object):
         while True:
             frame = frontend.recv_multipart()
             frame.pop(0)            # id
-            cmd_type = frame.pop(0) # cmd_typ
+            cmd_type = frame.pop(0)
             arg = frame.pop()       # optional arg
             cmd = frame.pop()       # cmd
+            # metadriver commands do NOT have a name attr
             name = None
-            if not cmd_type == 'metadriver':
+            if not cmd_type == b'metadriver':
                 name = frame.pop()  # name, either driver name or instance id
-            if cmd_type == 'instance':
+            if cmd_type == b'instance':
                 self.backend_communication.send_multipart([name,
                                                            cmd,
                                                            arg])
+            elif cmd_type == b'driver':
+                # update
+                # restart
+                # details ?
+                if cmd == b'start':
+                    self.start_driver(arg.decode('utf-8'))
+                elif cmd == b'list':
+                    self.send_driver_details(name.decode('utf-8'),
+                                             args.decode('utf-8'))
+            elif cmd_type == b'metadriver':
+                pass
 
+    def send_driver_details(self, driver, default=None):
+        driver = self.plugin_manager.get_plugins(_get_driver(driver))
+        if default:
+            details = driver.get_default_device()
+        else:
+            details = driver.get_devices()
+        details = [x.encode("ascii") for x in details]
+        self.frontend_communication.send_multipart(*details)
 
-
+    def track_device(self, driver, device):
+        driver = self.plugin_manager.get_plugins(_get_driver(driver))
+        device = driver.get_device(device)
 
     def start_driver(self, driver):
         driver = self.plugin_manager.get_plugins(_get_driver(driver))
-        # TODO: finish
+        self.plugin_manager.add_plugins(driver())
+        self.frontend_communication.send_multipart([b"driver", b"started"])
 
 def _get_instance(id_):
     def filter_function(instances):
