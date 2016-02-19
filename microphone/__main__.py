@@ -1,36 +1,11 @@
 import sys
-import time
-import argparse
+import subprocess
 from os import path
-from multiprocessing import Process
-
 import zmq
-
-from reactor import Reactor
-from garbage import G
 from _argparser import MicArgParser
 
 
-def record(self):
-    context = zmq.Context()
-
-    publish_socket = context.socket(zmq.PUB)
-    publish_socket.connect(address)
-
-    reciever = context.socket(zmq.PAIR)
-    reciever.bind('inproc://microphone')
-
-    while True:
-        msg = reciever.recv()
-        if msg:
-            frames = []
-            for _ in range(0, msg):
-                frames.append(audio.record())
-
-            publish_socket.send_multipart(frames)
-
-
-def main(*args, **kwargs):
+def main(multiprocess=True, *args, **kwargs):
     """
     kwargs:
         'publish_address': in the form of `tcp:///*:5555`
@@ -38,27 +13,37 @@ def main(*args, **kwargs):
 
         'response_address': in the form of `tcp:///*:5555`
         or any other zeromq address format. IE `ipc:///*:5555`
-
-        'rate'
-
-        'bits'
-
-        'channel'
-
-        'chunksize'
     """
+    directory = path.dirname(__file__)
+    communication_node_filepath = path.join(directory,
+                                            'communication_node.py')
+
+    audio_node_filepath = path.join(directory,
+                                    'audio_node.py')
+    python_interp = sys.executable
+    audio_node_args = ()
+    audio_node_process = subprocess.Popen((python_interp,
+                                           audio_node_filepath,
+                                           *audio_node_args))
+
+    communication_node_args = ()
+    commmunication_node_process = subprocess.Popen((python_interp,
+                                                    communication_node_filepath,
+                                                    *communication_node_args))
+
     context = zmq.Context()
-    garbage = G(context)
-    reactor = Reactor(context)
-
-    driver = kwargs.get('driver', 'pyaudio')
-    reactor.start_driver(driver)
-
-    # now, let's talk on our public face
-    reactor.run()
+    socket = zmq.socket(zmq.REP)
+    socket.bind('tcp://localhost:5560')
+    while True:
+        frame = socket.recv()
+        print('msg recieved', frame)
+        if frame == b'restart communication node':
+            pass
+        elif frame == b'restart audio node':
+            pass
 
 
 if __name__ == '__main__':
     parser = MicArgParser()
     args = parser.parse_args()
-    main()
+    main(*args)
