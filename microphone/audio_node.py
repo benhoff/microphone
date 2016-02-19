@@ -1,3 +1,4 @@
+import argparse
 import zmq
 
 
@@ -19,3 +20,26 @@ class AudioNode(object):
 
         # forward all audio internal traffic out
         zmq.proxy(self.backend_audio, self.frontend_audio)
+
+    def run(self):
+        while True:
+            zmq.poll((self.frontend_audio, self.backend_audio))
+
+def main(frontend_address, backend_address):
+    audio_node = AudioNode()
+    # NOTE: blocking call
+    audio_node.run()
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('frontend_address',
+                        store=True,
+                        default='tcp://localhost:5555')
+
+    parser.add_argument('backend_address',
+                        store=True,
+                        default='tcp://localhost:5556')
+
+    args = parser.parse_args()
+    main(args.frontend_address, args.backend_address)
