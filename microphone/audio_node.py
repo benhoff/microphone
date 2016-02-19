@@ -1,11 +1,11 @@
 import zmq
 
 
-class G(object):
+class AudioNode(object):
     def __init__(self, context=None, **kwargs):
         context = context or zmq.Context()
         self.address_frontend = kwargs.get('address_frontend',
-                                           'tcp://*:5555')
+                                           'tcp://localhost:5555')
 
         self.address_backend = kwargs.get('address_backend',
                                           'inproc://microphone-audio')

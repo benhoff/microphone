@@ -8,11 +8,11 @@ class MetadriverCMD:
     active = 'active'
 
 
-class Reactor(object):
+class CommunicationNode(object):
     def __init__(self, context=None, **kwargs):
         self._context = context or zmq.Context()
         self.address_frontend = kwargs.get('address_frontend',
-                                           'tcp://*:5556')
+                                           'tcp://localhost:5556')
 
         # this might need to be defaulted to a tcp device?
         self.address_backend = kwargs.get('address_backend',

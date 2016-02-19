@@ -1,3 +1,4 @@
+import time
 import logging
 import contextlib
 import re
@@ -18,40 +19,52 @@ def bits_to_samplefmt(bits):
 
 
 class PyAudioEnginePlugin:
-    def __init__(self, context=None, address=''):
+    def __init__(self,
+                 context=None,
+                 communication_address='',
+                 audio_address=''):
+
         # super().__init__(context, address)
         self._context = context or zmq.Context()
-        self.socket = self._context.socket(zmq.ROUTER)
-        self.socket.connect(address)
-        track = self.socket.send(b'awake!', track=True, copy=False)
-        track.wait()
-        print('made it here')
+        self.communication_socket = self._context.socket(zmq.REP)
+        self.communication_socket.connect(communication_address)
 
-        self.devices = {}
+        self.audio_socket = self._context.socket(zmq.PUB)
+        self.audio_socket.connect(audio_address)
 
         self._logger = logging.getLogger(__name__)
         self._logger.info("Initializing PyAudio. ALSA/Jack error messages " +
                           "that pop up during this process are normal and " +
                           "can usually be safely ignored.")
         self._pyaudio = pyaudio.PyAudio()
+        # NOTE: pyaudio SPAMS the terminal, this seperates everything
+        print('\n')
         self._logger.info("Initialization of PyAudio engine finished")
+
+        self.devices = {}
+        self.get_devices()
 
     def run(self):
         while True:
             # NOTE: `frame` is a list of byte strings
-            frame = self.socket.recv_multipart()
-            # NOTE: the name variable could be an empty string
-            name = frame.pop(0)
-            command_type = frame.pop(0)
+            frame = self.communication_socket.recv_multipart()
             command = frame.pop(0)
             optional_arg = frame.pop(0)
-            print(frame, '\n', command_type, flush=True)
+            print(frame, '\n', command, flush=True)
 
-            if command_type == b'list_devices':
+            if command == b'list_devices':
                 devices = self.get_devices()
-                self.socket.send_multipart([x for x in devices.keys()])
+                # get out all the names and encode them in ascii to send
+                devices = [x.encode('ascii') for x in devices.keys()]
+                self.communication_socket.send_multipart(devices)
+            elif command == b'record':
+                print(self.devices)
+                device = self.devices[optional_arg.decode('utf-8')]
+                print('recording!', optional_arg)
+                device.record(chunksize=1024)
             else:
-                self.socket.send(b'')
+                print('sending blank?')
+                # self.communication_socket.send(b'')
 
     def __del__(self):
         self._pyaudio.terminate()
@@ -65,7 +78,6 @@ class PyAudioEnginePlugin:
             if name in self.devices:
                 continue
             else:
-                print(name)
                 self.devices[name] = PyAudioDevice(self, info)
 
         return self.devices
@@ -178,7 +190,9 @@ class PyAudioDevice:
     def record(self, chunksize, *args):
         with self.open_stream(*args, chunksize=chunksize,
                               output=False) as stream:
-            while True:
+
+            # FIXME: need some sort of time based calculation based on chunksize
+            for _ in range(5):
                 try:
                     frame = stream.read(chunksize)
                 except IOError as e:
@@ -194,4 +208,4 @@ class PyAudioDevice:
                                          " '%s': '%s' (Errno: %d)", self.slug,
                                          strerror, errno)
                 else:
-                    yield frame
+                    self._engine.audio_socket.send(frame)

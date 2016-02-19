@@ -2,6 +2,7 @@ import abc
 
 import zmq
 
+# Drivers drive devices
 class DriverCMD:
     invoke = 'invoke'
     update = 'update'
@@ -9,9 +10,8 @@ class DriverCMD:
     details = 'details'
     list = 'list'
 
-class InstanceCMD:
+class DeviceCMD:
     record = 'record'
-    delete = 'delete'
 
 class AudioEnginePlugin(metaclass=abc.ABCMeta):
     def __init__(self, context=None, address=''):
