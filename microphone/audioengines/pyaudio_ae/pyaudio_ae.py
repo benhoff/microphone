@@ -210,7 +210,7 @@ class PyAudioDevice:
             print('steps', steps)
             for _ in range(steps):
                 try:
-                    frame = stream.read(1)
+                    frame = stream.read(chunksize)
                 except IOError as e:
                     if type(e.errno) is not int:
                         # Simple hack to work around the fact that the

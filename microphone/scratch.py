@@ -39,17 +39,18 @@ while True:
     command = b'record'
     optional_arg = b'default'
     frame = (empty, command, optional_arg)
+    """
     f = wave.open('audio.wav', mode='wb')
     f.setnchannels(2)
     p = pyaudio.PyAudio()
     f.setsampwidth(p.get_sample_size(pyaudio.paInt16))
     f.setframerate(p.get_default_input_device_info()['defaultSampleRate'])
+    """
     dealer_socket.send_multipart(frame)
     # record_reply = dealer_socket.recv_multipart()
     for _ in range(215):
         frame = audio_socket.recv()
-        print(frame)
-        f.writeframes(frame)
+        # f.writeframes(frame)
 
-    f.close()
+    # f.close()
     break
