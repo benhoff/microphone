@@ -1,3 +1,5 @@
+import argparse
+
 from threading import Thread
 import zmq
 from plugin_manager import AudioPluginManager
@@ -67,3 +69,16 @@ def _get_driver(name):
                 return plugin
 
     return filter_function
+
+def main(*args):
+    communication_node = CommunicationNode()
+
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--frontend_adress', store=True, default='tcp://localhost:5561')
+    parser.add_argument('--backend_address', store=True, default='tcp://localhost:5562')
+    args = parser.parse_args()
+    main(args)
+    pass

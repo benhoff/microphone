@@ -15,11 +15,13 @@ def main(multiprocess=True, *args, **kwargs):
         or any other zeromq address format. IE `ipc:///*:5555`
     """
     directory = path.dirname(__file__)
+    # the communication node is responsible for launching the audio devices
     communication_node_filepath = path.join(directory,
                                             'communication_node.py')
 
     audio_node_filepath = path.join(directory,
                                     'audio_node.py')
+
     python_interp = sys.executable
     audio_node_args = ()
     audio_node_process = subprocess.Popen((python_interp,

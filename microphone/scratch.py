@@ -16,13 +16,16 @@ audio_socket_address = 'tcp://127.0.0.1:5556'
 audio_socket = context.socket(zmq.SUB)
 audio_socket.bind(audio_socket_address)
 audio_socket.setsockopt_string(zmq.SUBSCRIBE, '')
-
-audio_filepath = path.join(path.dirname(__file__),
+directory = path.dirname(__file__)
+audio_filepath = path.join(directory,
                            'audioengines',
                            'pyaudio_ae',
                            '__main__.py')
 
-subprocess.Popen((sys.executable, audio_filepath, address, audio_socket_address))
+communication_node = path.join(directory,
+                               'communication_node.py')
+
+subprocess.Popen((sys.executable, communication_node, address, audio_socket_address))
 time.sleep(2)
 
 while True:

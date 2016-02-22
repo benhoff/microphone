@@ -17,6 +17,7 @@ class AudioNode(object):
         # create the internal subscription endpoint
         self.backend_audio = context.socket(zmq.XSUB)
         self.backend_audio.bind(self.address_backend)
+        self.backend_audio.setsockopt_string(zmq.SUBSCRIBE, '')
 
         # forward all audio internal traffic out
         zmq.proxy(self.backend_audio, self.frontend_audio)
