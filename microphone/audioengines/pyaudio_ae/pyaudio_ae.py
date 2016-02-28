@@ -29,6 +29,8 @@ class PyAudioEnginePlugin:
         self._context = context or zmq.Context()
         self.communication_socket = self._context.socket(zmq.REP)
         self.communication_socket.connect(communication_address)
+        self.communication_socket.setsockopt_string(zmq.IDENTITY,
+                                                    'pyaudioengine')
 
         self.audio_socket = self._context.socket(zmq.PUB)
         self.audio_socket.connect(audio_address)
@@ -49,6 +51,7 @@ class PyAudioEnginePlugin:
         while True:
             # NOTE: `frame` is a list of byte strings
             frame = self.communication_socket.recv_multipart()
+            print('4th socket receiving end', frame)
             command = frame.pop(0)
             optional_arg = frame.pop(0)
 
@@ -65,9 +68,11 @@ class PyAudioEnginePlugin:
                 chunksize = 1024
                 device.record(chunksize, bits, channels)
                 sys.exit(0)
+            elif command == b'':
+                self.communication_socket.send(b'')
             else:
-                print('sending blank?')
-                # self.communication_socket.send(b'')
+                print('WARNING DID NOT PARSE PACKET IN PYAUDIO CORRECTLY, SENDING BLANK')
+                self.communication_socket.send(b'')
 
     def __del__(self):
         self._pyaudio.terminate()

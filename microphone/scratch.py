@@ -5,6 +5,7 @@ import pyaudio
 import time
 from os import path
 import zmq
+import atexit
 
 
 context = zmq.Context()
@@ -19,16 +20,31 @@ communication_node = path.join(directory,
 args = (sys.executable,
         communication_node)
 
-subprocess.Popen(args)
+subprocess = subprocess.Popen(args)
+
+def _kill_subprocess():
+    subprocess.kill()
+
+atexit.register(_kill_subprocess)
 
 while True:
+    command_type = b'metadriver'
+    command = b'list_drivers'
+    optional_arg = b''
+    frame = (command_type, command, optional_arg)
+
+    request_socket.send_multipart(frame)
+
+    reply = request_socket.recv_multipart()
+    print(reply)
+
+
     # response socket expects to see an empty first frame
-    empty = b''
     command_type = b'driver'
     command = b'list_devices'
     optional_arg = b''
 
-    frame = (empty, command_type, command, optional_arg)
+    frame = (command_type, command, optional_arg)
 
     request_socket.send_multipart(frame)
     reply = request_socket.recv_multipart()
@@ -52,4 +68,3 @@ while True:
 
     f.close()
     """
-    break

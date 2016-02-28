@@ -36,6 +36,10 @@ class CommunicationNode(object):
         self.backend_communication = self._context.socket(zmq.DEALER)
         self.backend_communication.bind(self.backend_adress)
 
+        self.poller = zmq.Poller()
+        self.poller.register(self.frontend_communication, zmq.POLLIN)
+        self.poller.register(self.backend_communication, zmq.POLLIN)
+
         # TODO:
         # need to bind the front and backend communication together
         # need to poll this connection?
@@ -56,31 +60,55 @@ class CommunicationNode(object):
         thread_instance = Thread(target=invoked_plugin.run)
         self.driver_processes.append(thread_instance)
 
+    def _handle_frontend_communication(self):
+        frame = self.frontend_communication.recv_multipart()
+        print('2nd socket frame', frame)
+        # id
+        id_ = frame.pop(0)
+        # expect a blank frame here
+        frame.pop(0)
+
+        cmd_type = frame.pop(0)
+        arg = frame.pop()       # optional arg
+        cmd = frame.pop()       # cmd
+
+        # NOTE: metadriver commands do NOT have a name attr
+        name = None
+        if not cmd_type == b'metadriver':
+            pass
+            # name = frame.pop()  # name, either driver name or instance id
+        if cmd_type == b'instance' or cmd_type == b'driver':
+            # FIXME: pretty sure the first part needs to be an socket id
+            self.backend_communication.send_multipart((name,
+                                                       cmd_type,
+                                                       cmd,
+                                                       arg))
+
+        elif cmd_type == b'metadriver':
+            if cmd == b'list_drivers':
+                optional_arg = b''
+                # NOTE: we want to `ping` the drivers to get address
+                # so we'll send an empty command to get an empty back
+                command = b''
+                frame = (b'', command, optional_arg)
+                self.backend_communication.send_multipart(frame)
+
+    def _handle_backend_communication(self):
+        frame = self.backend_communication.recv_multipart()
+        # should get back all devices + a socket descriptor
+        print('3rd socket frame', frame)
+
     def run(self):
         for thread in self.driver_processes:
-            thread.run()
+            thread.start()
 
-        frontend = self.frontend_communication
         while True:
-            frame = frontend.recv_multipart()
-            frame.pop(0)            # id
-            cmd_type = frame.pop(0)
-            arg = frame.pop()       # optional arg
-            cmd = frame.pop()       # cmd
-            # NOTE: metadriver commands do NOT have a name attr
-            name = None
-            if not cmd_type == b'metadriver':
-                name = frame.pop()  # name, either driver name or instance id
-            if cmd_type == b'instance' or cmd_type == b'driver':
-                # FIXME: pretty sure the first part needs to be an socket id
-                self.backend_communication.send_multipart((name,
-                                                           cmd_type,
-                                                           cmd,
-                                                           arg))
+            sockets = dict(self.poller.poll())
 
-            elif cmd_type == b'metadriver':
-                pass
-
+            if self.frontend_communication in sockets:
+                self._handle_frontend_communication()
+            elif self.backend_communication in sockets:
+                self._handle_backend_communication()
 
     def invoke_driver(self, driver):
         """
@@ -109,6 +137,7 @@ def main(frontend_address='tcp://127.0.0.1:5561',
               'audio_subscription_address': audio_subscription_address}
 
     communication_node = CommunicationNode(**kwargs)
+    communication_node.run()
 
 
 if __name__ == '__main__':
