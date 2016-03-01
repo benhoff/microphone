@@ -34,15 +34,15 @@ while True:
     frame = (command_type, command, optional_arg)
 
     request_socket.send_multipart(frame)
-
     reply = request_socket.recv_multipart()
-    print(reply)
 
+    # reply has all the avaiable microphone recording software IDs
+    record_id = reply[0]
 
     # response socket expects to see an empty first frame
     command_type = b'driver'
-    command = b'list_devices'
-    optional_arg = b''
+    command = b'record'
+    optional_arg = record_id
 
     frame = (command_type, command, optional_arg)
 

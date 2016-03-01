@@ -27,10 +27,12 @@ class PyAudioEnginePlugin:
 
         # super().__init__(context, address)
         self._context = context or zmq.Context()
-        self.communication_socket = self._context.socket(zmq.REP)
+        self.communication_socket = self._context.socket(zmq.REQ)
         self.communication_socket.connect(communication_address)
         self.communication_socket.setsockopt_string(zmq.IDENTITY,
                                                     'pyaudioengine')
+
+        self.communication_socket.send(b'READY')
 
         self.audio_socket = self._context.socket(zmq.PUB)
         self.audio_socket.connect(audio_address)
@@ -51,7 +53,11 @@ class PyAudioEnginePlugin:
         while True:
             # NOTE: `frame` is a list of byte strings
             frame = self.communication_socket.recv_multipart()
-            print('4th socket receiving end', frame)
+
+            # NOTE: pretty sure there will be two id's
+            # 1st id, should be the request socket, and the second should be
+            # the dealer
+
             command = frame.pop(0)
             optional_arg = frame.pop(0)
 
@@ -212,7 +218,6 @@ class PyAudioDevice:
             record_seconds = 5
             rate = int(self.info['defaultSampleRate'])
             steps = int(rate/chunksize * record_seconds)
-            print('steps', steps)
             for _ in range(steps):
                 try:
                     frame = stream.read(chunksize)

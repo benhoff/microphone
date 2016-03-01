@@ -33,22 +33,22 @@ class CommunicationNode(object):
         self.frontend_communication.bind(self.frontend_adress)
 
         # create internal communications
-        self.backend_communication = self._context.socket(zmq.DEALER)
+        self.backend_communication = self._context.socket(zmq.ROUTER)
         self.backend_communication.bind(self.backend_adress)
 
         self.poller = zmq.Poller()
         self.poller.register(self.frontend_communication, zmq.POLLIN)
         self.poller.register(self.backend_communication, zmq.POLLIN)
 
-        # TODO:
-        # need to bind the front and backend communication together
-        # need to poll this connection?
-
         self.driver_processes = []
         # plugins are already collected
         self.plugin_manager = AudioPluginManager()
+        """
         # this should be a list of class instances
-        # class_instance = self.plugin_manager.get_plugins()[0]
+        plugins = self.plugin_manager.get_plugins()
+        class_instance = plugins[0]
+        print(plugins, class_instance)
+        """
 
         # FIXME
         class_instance = PyAudioEnginePlugin
@@ -60,43 +60,44 @@ class CommunicationNode(object):
         thread_instance = Thread(target=invoked_plugin.run)
         self.driver_processes.append(thread_instance)
 
+        self._microphone_sockets = []
+
     def _handle_frontend_communication(self):
         frame = self.frontend_communication.recv_multipart()
-        print('2nd socket frame', frame)
         # id
         id_ = frame.pop(0)
         # expect a blank frame here
         frame.pop(0)
 
         cmd_type = frame.pop(0)
-        arg = frame.pop()       # optional arg
-        cmd = frame.pop()       # cmd
+        cmd = frame.pop(0)       # cmd
+        arg = frame.pop(0)       # optional arg
 
         # NOTE: metadriver commands do NOT have a name attr
         name = None
         if not cmd_type == b'metadriver':
             pass
-            # name = frame.pop()  # name, either driver name or instance id
+            # optional_arg = frame.pop()  # name, either driver name or instance id
+
         if cmd_type == b'instance' or cmd_type == b'driver':
-            # FIXME: pretty sure the first part needs to be an socket id
-            self.backend_communication.send_multipart((name,
-                                                       cmd_type,
-                                                       cmd,
-                                                       arg))
+            if cmd == b'record':
+                driver_socket_id = arg
+                optional_arg = b'default'
+                # FIXME: Should be able to pass in the original id
+                frame = (driver_socket_id, b'', cmd, optional_arg)
+                self.backend_communication.send_multipart(frame)
 
         elif cmd_type == b'metadriver':
             if cmd == b'list_drivers':
-                optional_arg = b''
-                # NOTE: we want to `ping` the drivers to get address
-                # so we'll send an empty command to get an empty back
-                command = b''
-                frame = (b'', command, optional_arg)
-                self.backend_communication.send_multipart(frame)
+                # NOTE: Might not work
+                frame = (id_, b'', *self._microphone_sockets)
+                self.frontend_communication.send_multipart(frame)
 
     def _handle_backend_communication(self):
         frame = self.backend_communication.recv_multipart()
-        # should get back all devices + a socket descriptor
-        print('3rd socket frame', frame)
+        if frame[2] == b'READY':
+            id_ = frame[0]
+            self._microphone_sockets.append(id_)
 
     def run(self):
         for thread in self.driver_processes:
