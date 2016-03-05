@@ -6,7 +6,7 @@ import zmq
 from microphone.plugin_manager import AudioPluginManager
 
 # FIXME
-from audioengines.pyaudio_ae.pyaudio_ae import PyAudioEnginePlugin
+from microphone.audioengines.pyaudio_ae.pyaudio_ae import PyAudioEnginePlugin
 
 
 class MetadriverCMD:
