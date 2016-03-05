@@ -10,7 +10,7 @@ with open(os.path.join(directory, 'README.rst')) as f:
 
 setup(
     name="microphone",
-    version='0.0.1',
+    version='0.0.2',
     description='Text to Speech for python',
     # long_description=long_description,
     url='https://github.com/benhoff/microphone',
@@ -31,6 +31,12 @@ setup(
                                               'base = microphone.audioengine_plugin']},
 
     packages= find_packages(), # exclude=['docs', 'tests']
+    install_requires=[
+        'pluginmanager',
+        'PyAudio',
+        'pyzmq'
+        ],
+
     extras_require={
         'dev': ['flake8']
         },
