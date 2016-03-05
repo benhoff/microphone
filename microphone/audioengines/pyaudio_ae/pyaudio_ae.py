@@ -52,6 +52,7 @@ class PyAudioEnginePlugin:
     def run(self):
         while True:
             # NOTE: `frame` is a list of byte strings
+            # Once we recv here, MUST reply in order to loop again!
             frame = self.communication_socket.recv_multipart()
 
             # NOTE: pretty sure there will be two id's
@@ -73,7 +74,7 @@ class PyAudioEnginePlugin:
                 channels  = 2
                 chunksize = 1024
                 device.record(chunksize, bits, channels)
-                sys.exit(0)
+                self.communication_socket.send(b'')
             elif command == b'':
                 self.communication_socket.send(b'')
             else:
