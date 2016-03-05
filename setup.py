@@ -10,7 +10,7 @@ with open(os.path.join(directory, 'README.rst')) as f:
 
 setup(
     name="microphone",
-    version='0.0.4',
+    version='0.0.5',
     description='Text to Speech for python',
     # long_description=long_description,
     url='https://github.com/benhoff/microphone',

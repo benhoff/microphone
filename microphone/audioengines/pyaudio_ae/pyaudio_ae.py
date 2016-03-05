@@ -135,6 +135,8 @@ class PyAudioDevice:
         self._index = info['index']
         self._max_output_channels = info['maxOutputChannels']
         self._max_input_channels = info['maxInputChannels']
+        # FIXME
+        self._sample_width = self._engine._pyaudio.get_sample_size(pyaudio.paInt16)
 
 
     def supports_format(self, bits, channels, rate, output=False):
@@ -219,9 +221,14 @@ class PyAudioDevice:
             record_seconds = 5
             rate = int(self.info['defaultSampleRate'])
             steps = int(rate/chunksize * record_seconds)
+            data_list = []
+            # NOTE: need the rate info and sample width for ASR
+            data_list.append(rate)
+            data_list.append(self._sample_width)
+
             for _ in range(steps):
                 try:
-                    frame = stream.read(chunksize)
+                    data_list.append(stream.read(chunksize))
                 except IOError as e:
                     if type(e.errno) is not int:
                         # Simple hack to work around the fact that the
@@ -234,5 +241,5 @@ class PyAudioDevice:
                     self._logger.warning("IO error while reading from device" +
                                          " '%s': '%s' (Errno: %d)", self.slug,
                                          strerror, errno)
-                else:
-                    self._engine.audio_socket.send(frame)
+
+            self._engine.audio_socket.send_multipart(data_list)
