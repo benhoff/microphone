@@ -3,7 +3,7 @@ from subprocess import Popen
 from threading import Thread
 
 import zmq
-from plugin_manager import AudioPluginManager
+from microphone.plugin_manager import AudioPluginManager
 
 # FIXME
 from audioengines.pyaudio_ae.pyaudio_ae import PyAudioEnginePlugin
