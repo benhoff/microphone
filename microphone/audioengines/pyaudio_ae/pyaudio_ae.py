@@ -223,8 +223,8 @@ class PyAudioDevice:
             steps = int(rate/chunksize * record_seconds)
             data_list = []
             # NOTE: need the rate info and sample width for ASR
-            data_list.append(rate)
-            data_list.append(self._sample_width)
+            data_list.append(bytes(rate))
+            data_list.append(bytes(self._sample_width))
 
             for _ in range(steps):
                 try:

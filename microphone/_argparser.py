@@ -4,8 +4,8 @@ _BITS = 16
 _CHANNEL = 1
 _CHUNKSIZE = 1024
 _DRIVER = 'pyaudio'
-_PUBLISH_ADDRESS = 'tcp://*:5555'
-_RESPONSE_ADDRESS = 'tcp://*:5556'
+_PUBLISH_ADDRESS = 'tcp://127.0.0.1:5555'
+_RESPONSE_ADDRESS = 'tcp://127.0.0.1:5556'
 
 
 class MicArgParser(argparse.ArgumentParser):
