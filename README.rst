@@ -15,3 +15,7 @@ Installation
 -or- ::
 
     pip install git+https://github.com/benhoff/microphone.git
+
+if running from source need to run the command ::
+
+   python setup.py develop
