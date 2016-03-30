@@ -3,7 +3,7 @@ from subprocess import Popen
 from threading import Thread
 
 import zmq
-from microphone.plugin_manager import AudioPluginManager
+import pluginmanager
 from microphone.communication_messaging import CommunicationMessaging
 
 
@@ -17,9 +17,10 @@ class CommunicationNode(object):
         self.driver_processes = []
         self.messaging = CommunicationMessaging(context, **kwargs)
         # plugins are already collected
-        self.plugin_manager = AudioPluginManager()
+        self.plugin_manager = pluginmanager.PluginInterface()
+        self.plugin_manager.set_entry_points('microphone.audioengines')
+        plugins = self.plugin_manager.collect_entry_point_plugins()
 
-        plugins = self.plugin_manager.get_plugins()
         # TODO: add in some logic here or something
         class_instance = plugins[0]
         invoked_plugin = class_instance(context,
