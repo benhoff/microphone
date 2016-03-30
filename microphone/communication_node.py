@@ -4,7 +4,7 @@ from threading import Thread
 
 import zmq
 import pluginmanager
-from microphone.communication_messaging import CommunicationMessaging
+from microphone.messaging import Messaging
 
 
 class MetadriverCMD:
@@ -15,7 +15,11 @@ class MetadriverCMD:
 class CommunicationNode(object):
     def __init__(self, context=None, **kwargs):
         self.driver_processes = []
-        self.messaging = CommunicationMessaging(context, **kwargs)
+        self.audio_subscription_address = kwargs.get('audio_subscription_address',
+                                                     _AUDIO_SUBSCRIPTION_ADDRESS)
+
+        print(kwargs)
+        self.messaging = Messaging(context, **kwargs)
         # plugins are already collected
         self.plugin_manager = pluginmanager.PluginInterface()
         self.plugin_manager.set_entry_points('microphone.audioengines')
@@ -25,7 +29,7 @@ class CommunicationNode(object):
         class_instance = plugins[0]
         invoked_plugin = class_instance(context,
                                         self.messaging.backend_address,
-                                        self.messaging.audio_subscription_address)
+                                        self.audio_subscription_address)
 
         thread_instance = Thread(target=invoked_plugin.run)
         self.driver_processes.append(thread_instance)
@@ -73,15 +77,17 @@ def _get_kwargs():
     parser = argparse.ArgumentParser()
     parser.add_argument('--frontend_address',
                         action='store',
-                        default='tcp://127.0.0.1:5561')
+                        default=_DEFAULT_FRONTEND)
 
+    # TODO: Decide if this is needed
+    # might could just bind to random port
     parser.add_argument('--backend_address',
                         action='store',
-                        default='tcp://127.0.0.1:5562')
+                        default=_DEFAULT_BACKEND)
 
     parser.add_argument('--audio_subscription_address',
                         action='store',
-                        default='tcp://127.0.0.1:5655')
+                        default=_AUDIO_SUBSCRIPTION_ADDRESS)
 
     return vars(parser.parse_args())
 

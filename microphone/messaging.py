@@ -1,7 +1,7 @@
 import zmq
 
 
-class CommunicationMessaging:
+class Messaging:
     def __init__(self, context=None, **kwargs):
         self._context = context or zmq.Context()
         self.frontend_address = kwargs.get('frontend_address',
@@ -11,10 +11,6 @@ class CommunicationMessaging:
         self.backend_address = kwargs.get('backend_address',
                                          'tcp://127.0.0.1:5562')
 
-        asa = kwargs.get('audio_subscription_address',
-                         'tcp://127.0.0.1:5655')
-
-        self.audio_subscription_address = asa
         # create the public facing communication socket
         self.frontend_communication = self._context.socket(zmq.ROUTER)
         self.frontend_communication.bind(self.frontend_address)

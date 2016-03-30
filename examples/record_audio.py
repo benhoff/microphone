@@ -3,26 +3,38 @@ import wave
 import subprocess
 import pyaudio
 import time
+import atexit
+import contextlib
+
 from os import path
 import zmq
-import atexit
 
 
+@contextlib.contextmanager
 def _create_file():
+    """
+    Returns a file handle which is used to record audio
+    """
     f = wave.open('audio.wav', mode='wb')
     f.setnchannels(2)
     p = pyaudio.PyAudio()
     f.setsampwidth(p.get_sample_size(pyaudio.paInt16))
     f.setframerate(p.get_default_input_device_info()['defaultSampleRate'])
-    return f
+    try:
+        yield f
+    finally:
+        f.close()
 
 
 def main():
+    # using messaging library. Create the sockets for messaging
     context = zmq.Context()
     request_socket = context.socket(zmq.REQ)
-    frontend = 'tcp://127.0.0.1:6910'
-    request_socket.connect(frontend)
-    audio_socket = 'tcp://127.0.0.1:6823'
+    frontend_address = 'tcp://127.0.0.1:6910'
+    request_socket.connect(frontend_address)
+    audio_socket_address = 'tcp://127.0.0.1:6823'
+    audio_socket = context.socket(zmq.SUB)
+    audio_socket.setsockopt(zmq.SUBSCRIBE, b'')
 
     file_dir = path.dirname(__file__)
     src_dir = path.join('..', 'microphone')
@@ -33,9 +45,9 @@ def main():
     args = (sys.executable,
             communication_node,
             '--frontend_address',
-            frontend,
+            frontend_address,
             '--audio_subscription_address',
-            audio_socket)
+            audio_socket_address)
 
     subprocess_ = subprocess.Popen(args)
 
