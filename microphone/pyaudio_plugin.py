@@ -27,7 +27,7 @@ class PyAudioEnginePlugin:
                  communication_address='',
                  audio_address=''):
 
-        self.messaging = PluginMessaging(self, context)
+        self.messaging = PluginMessaging(self, communication_address, context, audio_subscription_address=audio_address)
         self._logger = logging.getLogger(__name__)
         self._logger.info("Initializing PyAudio. ALSA/Jack error messages " +
                           "that pop up during this process are normal and " +
@@ -42,6 +42,9 @@ class PyAudioEnginePlugin:
 
     def __del__(self):
         self._pyaudio.terminate()
+
+    def run(self):
+        self.messaging.run()
 
     def get_devices(self, device_type='all'):
         num_devices = self._pyaudio.get_device_count()
@@ -200,7 +203,6 @@ class PyAudioDevice:
                     self._logger.warning("IO error while reading from device" +
                                          " '%s': '%s' (Errno: %d)", self.slug,
                                          strerror, errno)
-
             self._engine.messaging.send_multipart(data_list)
 
 def main(context=None,

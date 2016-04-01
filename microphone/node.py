@@ -12,13 +12,12 @@ class MetadriverCMD:
     active = 'active'
 
 
-class CommunicationNode(object):
+class Node(object):
     def __init__(self, context=None, **kwargs):
         self.driver_processes = []
         self.audio_subscription_address = kwargs.get('audio_subscription_address',
                                                      _AUDIO_SUBSCRIPTION_ADDRESS)
 
-        print(kwargs)
         self.messaging = Messaging(context, **kwargs)
         # plugins are already collected
         self.plugin_manager = pluginmanager.PluginInterface()
@@ -61,15 +60,15 @@ _DEFAULT_FRONTEND = 'tcp://127.0.0.1:5561'
 _DEFAULT_BACKEND = 'tcp://127.0.0.1:5562'
 _AUDIO_SUBSCRIPTION_ADDRESS = 'tcp://127.0.0.1:5655'
 
-def main(frontend_address=_DEFAULT_FRONTEND,
-         backend_address=_DEFAULT_BACKEND,
-         audio_subscription_address=_AUDIO_SUBSCRIPTION_ADDRESS):
+def main(*args, **kwargs):
+    """
+    kwargs:
+        frontend_address
+        backend_address
+        audio_subscription_address
+    """
 
-    kwargs = {'frontend_address': frontend_address,
-              'backend_address': backend_address,
-              'audio_subscription_address': audio_subscription_address}
-
-    communication_node = CommunicationNode(**kwargs)
+    communication_node = Node(*args, **kwargs)
     communication_node.run()
 
 

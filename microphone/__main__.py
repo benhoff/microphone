@@ -1,5 +1,5 @@
 import argparse
-from microphone.communication_node import CommunicationNode
+from microphone.node import Node
 
 
 def main(context=None, *args, **kwargs):
@@ -12,8 +12,8 @@ def main(context=None, *args, **kwargs):
         or any other zeromq address format. IE `ipc:///*:5555`
     """
     # TODO: parse args and kwargs
-    communication_node = CommunicationNode(context, **kwargs)
-    communication_node.run()
+    node = node(context, **kwargs)
+    node.run()
 
 
 def _get_kwargs():

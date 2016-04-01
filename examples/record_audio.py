@@ -1,5 +1,6 @@
 import sys
 import wave
+import time
 import subprocess
 import pyaudio
 import time
@@ -34,13 +35,14 @@ def main():
     request_socket.connect(frontend_address)
     audio_socket_address = 'tcp://127.0.0.1:6823'
     audio_socket = context.socket(zmq.SUB)
+    audio_socket.bind(audio_socket_address)
     audio_socket.setsockopt(zmq.SUBSCRIBE, b'')
 
     file_dir = path.dirname(__file__)
     src_dir = path.join('..', 'microphone')
 
     communication_node = path.join(src_dir,
-                                   'communication_node.py')
+                                   'node.py')
 
     args = (sys.executable,
             communication_node,
@@ -56,6 +58,8 @@ def main():
 
     atexit.register(_kill_subprocess)
     # First thing we want is a driver socket ID
+    # but let's wait a second to make sure everything is hooked up
+    time.sleep(1)
     command_type = b'metadriver'
     command = b'list_drivers'
     optional_arg = b''
@@ -77,21 +81,19 @@ def main():
 
 
     frame = (command_type, command, optional_arg)
+    with _create_file() as f:
 
-    # record request!
-    request_socket.send_multipart(frame)
+        # record request!
+        request_socket.send_multipart(frame)
+        frames = audio_socket.recv_multipart()
+        # this is the rate
+        frames.pop(0)
+        # this is the sample width
+        frames.pop(0)
+        for frame in frames:
+            f.writeframes(frame)
 
-    """
-    frames = audio_socket.recv_multipart()
-    # this is the rate
-    frames.pop(0)
-    # this is the sample width
-    frames.pop(0)
-    for frame in frames:
-        f.writeframes(frame)
-
-    f.close()
-    """
+    sys.exit(0)
 
 if __name__ == '__main__':
     main()

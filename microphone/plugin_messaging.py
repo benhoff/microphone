@@ -2,11 +2,12 @@ import zmq
 
 
 class PluginMessaging:
-    def __init__(self, plugin, context=None, **kwargs):
+    def __init__(self, plugin, backend_address, context=None, **kwargs):
         self.plugin = plugin
         self._context = context or zmq.Context()
         self.communication_socket = self._context.socket(zmq.REQ)
-        self.communication_socket.connect(kwargs['backend_address'])
+
+        self.communication_socket.connect(backend_address)
         self.communication_socket.setsockopt_string(zmq.IDENTITY,
                                                     'pyaudioengine')
 
@@ -15,7 +16,7 @@ class PluginMessaging:
         self.audio_socket = self._context.socket(zmq.PUB)
         self.audio_socket.connect(kwargs['audio_subscription_address'])
 
-    def send_multipart_message(self, msg):
+    def send_multipart(self, msg):
         self.audio_socket.send_multipart(msg)
 
     def run(self):
