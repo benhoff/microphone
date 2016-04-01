@@ -17,13 +17,18 @@ class PluginMessaging:
         self.audio_socket.connect(kwargs['audio_subscription_address'])
 
     def send_multipart(self, msg):
+        msg[0] = str(msg[0]).encode('ascii')
+        msg[1] = bytes([msg[0]])
         self.audio_socket.send_multipart(msg)
 
     def run(self):
         while True:
             # NOTE: `frame` is a list of byte strings
             # Once we recv here, MUST reply in order to loop again!
-            frame = self.communication_socket.recv_multipart()
+            try:
+                frame = self.communication_socket.recv_multipart()
+            except KeyboardInterrupt:
+                break
 
             # NOTE: pretty sure there will be two id's
             # 1st id, should be the request socket, and the second should be

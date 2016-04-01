@@ -12,7 +12,7 @@ def main(context=None, *args, **kwargs):
         or any other zeromq address format. IE `ipc:///*:5555`
     """
     # TODO: parse args and kwargs
-    node = node(context, **kwargs)
+    node = Node(context, **kwargs)
     node.run()
 
 

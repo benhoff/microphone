@@ -26,7 +26,10 @@ class Messaging:
 
     def run(self):
         while True:
-            sockets = dict(self.poller.poll())
+            try:
+                sockets = dict(self.poller.poll())
+            except KeyboardInterrupt:
+                break
 
             if self.frontend_communication in sockets:
                 self._handle_frontend_communication()

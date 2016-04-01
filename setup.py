@@ -10,7 +10,7 @@ with open(os.path.join(directory, 'README.rst')) as f:
 
 setup(
     name="microphone",
-    version='0.0.6',
+    version='0.0.7',
     description='Text to Speech for python',
     # long_description=long_description,
     url='https://github.com/benhoff/microphone',
@@ -27,7 +27,8 @@ setup(
     keywords='sound capture to text',
     author='Ben Hoff',
     author_email='beohoff@gmail.com',
-    entry_points={'microphone.audioengines': ['pyaudio = microphone.pyaudio_plugin:PyAudioEnginePlugin',]},
+    entry_points={'microphone.audioengines': ['pyaudio = microphone.pyaudio_plugin:PyAudioEnginePlugin',],
+                  'console_scripts': ['microphone-python = microphone.__main__:main']},
 
     packages= find_packages(), # exclude=['docs', 'tests']
     install_requires=[
