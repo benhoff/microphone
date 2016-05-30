@@ -22,7 +22,7 @@ class Node(object):
         # plugins are already collected
         self.plugin_manager = pluginmanager.PluginInterface()
         self.plugin_manager.set_entry_points('microphone.audioengines')
-        plugins = self.plugin_manager.collect_entry_point_plugins()
+        plugins, names = self.plugin_manager.collect_entry_point_plugins()
 
         # TODO: add in some logic here or something
         class_instance = plugins[0]
