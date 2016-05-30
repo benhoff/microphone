@@ -1,0 +1,8 @@
+--audio_driver: 'pyaudio'
+# might need communication and audio address instead?
+--pub_address: ''
+--sub_address: ''
+--rate: 160000
+--bits: 16
+--chunksize: 1024
+--channel: 1

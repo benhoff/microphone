@@ -34,7 +34,9 @@ setup(
     install_requires=[
         'pluginmanager',
         'PyAudio',
-        'pyzmq'
+        'pyzmq',
+        'pyyaml',
+        'vexbot'
         ],
 
     extras_require={

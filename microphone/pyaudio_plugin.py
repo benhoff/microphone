@@ -44,7 +44,46 @@ class PyAudioEnginePlugin:
         self._pyaudio.terminate()
 
     def run(self):
-        self.messaging.run()
+        while True:
+            # NOTE: `frame` is a list of byte strings
+            # Once we recv here, MUST reply in order to loop again!
+            try:
+                frame = self.communication_socket.recv_multipart()
+            except KeyboardInterrupt:
+                break
+
+            # NOTE: pretty sure there will be two id's
+            # 1st id, should be the request socket, and the second should be
+            # the dealer
+
+            msg = decode_vex_message(frame)
+
+            if msg.type == 'CMD':
+                command_type = msg.contents[0]
+
+                if command_type == 'list devices':
+                    devices = self.plugin.get_devices()
+                    frame = create_vex_message(msg.source,
+                                               'microphone',
+                                               'MSG',
+                                               devices)
+
+                    self.communication_socket.send_multipart(frame)
+                elif command_type == 'record':
+                    device_name = msg.contents[1]
+                    device = self.plugin.devices[device_name]
+                    # FIXME
+                    bits = 16
+                    channels  = 2
+                    chunksize = 1024
+                    device.record(chunksize, bits, channels)
+                    self.communication_socket.send(b'')
+                elif command == b'':
+                    self.communication_socket.send(b'')
+                else:
+                    print('WARNING DID NOT PARSE PACKET IN PYAUDIO CORRECTLY, SENDING BLANK')
+                    self.communication_socket.send(b'')
+
 
     def get_devices(self, device_type='all'):
         num_devices = self._pyaudio.get_device_count()

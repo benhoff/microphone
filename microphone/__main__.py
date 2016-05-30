@@ -1,5 +1,9 @@
 import argparse
-from microphone.node import Node
+
+import pluginmanager
+from vexbot.argenvconfig import ArgEnvConfig
+
+from microphone.messaging import Messaging
 
 
 def main(context=None, *args, **kwargs):
@@ -11,50 +15,41 @@ def main(context=None, *args, **kwargs):
         'response_address': in the form of `tcp:///*:5555`
         or any other zeromq address format. IE `ipc:///*:5555`
     """
-    # TODO: parse args and kwargs
-    node = Node(context, **kwargs)
-    node.run()
+    # Get configuration, settings filepath and load the settings up
+    config = _get_config()
+    settings_filepath = config.get('settings_path')
+    settings = config.load_settings(settings_filepath)
+
+    plugin_manager = pluginmanager.PluginInterface()
+    plugin_manager.set_entry_points('microphone.audioengines')
+    plugins, names = plugin_manager.collect_entry_point_plugins()
+
+    audio_driver = settings.get('audio_driver', 'pyaudio')
+
+    audio_driver_index = names.index(audio_driver)
+    # NOTE: this is a class
+    AudioDriver = plugins[audio_driver_index]
+
+    # NOTE: Assume that a computer will only use one audio driver?
+
+    # Also assume that microphones may be physcially displaced from each other
+    # which means that they might record simultaneously
+    messaging = Messaging(settings)
+    audio_driver = AudioDriver(settings, messaging)
+
+    audio_driver.run()
 
 
-def _get_kwargs():
-    parser = argparse.ArgumentParser(prog='Microphone',
-                                     description='audio capture')
 
-    parser.add_argument('--audio-driver', '-ad',
-                       action='store',
-                       default='pyaudio')
+def _get_config():
+    config = ArgEnvConfig()
+    config.add_argument('--settings_path',
+                        default='settings.yml',
+                        action='store')
 
-    parser.add_argument('--audio_address', '-aa',
-                      action='store',
-                      default='tcp://127.0.0.1:5555')
 
-    parser.add_argument('--communication_address', '-ca',
-                      action='store',
-                      default='tcp://127.0.0.1:5556')
-
-    parser.add_argument('--rate', '-r',
-                      action='store',
-                      default=160000,
-                      type=int)
-
-    parser.add_argument('--bits', '-b',
-                      action='store',
-                      default=16,
-                      type=int)
-
-    parser.add_argument('--chunksize', '-chk',
-                      action='store',
-                      default=1024,
-                      type=int)
-
-    parser.add_argument('--channel', '-chl',
-                      action='store',
-                      default=1,
-                      type=int)
-
-    return vars(parser.parse_args())
+    return config
 
 
 if __name__ == '__main__':
-    kwargs= _get_kwargs()
-    main(**kwargs)
+    main()
