@@ -7,8 +7,10 @@ import contextlib
 
 import pyaudio
 import zmq
-from microphone.plugin_messaging import PluginMessaging
 
+from vexmessage import create_vex_message, decode_vex_message
+
+from microphone.command_manager import CommandManager
 
 PYAUDIO_BIT_MAPPING = {8:  pyaudio.paInt8,
                        16: pyaudio.paInt16,
@@ -21,13 +23,10 @@ def bits_to_samplefmt(bits):
         return PYAUDIO_BIT_MAPPING[bits]
 
 
-class PyAudioEnginePlugin:
-    def __init__(self,
-                 context=None,
-                 communication_address='',
-                 audio_address=''):
-
-        self.messaging = PluginMessaging(self, communication_address, context, audio_subscription_address=audio_address)
+class PyAudio:
+    def __init__(self, messaging, settings):
+        self.messaging = messaging
+        self.command_manager = CommandManager(self, messaging)
         self._logger = logging.getLogger(__name__)
         self._logger.info("Initializing PyAudio. ALSA/Jack error messages " +
                           "that pop up during this process are normal and " +
@@ -44,11 +43,12 @@ class PyAudioEnginePlugin:
         self._pyaudio.terminate()
 
     def run(self):
+        messaging = self.messaging
         while True:
             # NOTE: `frame` is a list of byte strings
             # Once we recv here, MUST reply in order to loop again!
             try:
-                frame = self.communication_socket.recv_multipart()
+                frame = messaging.communication_socket.recv_multipart()
             except KeyboardInterrupt:
                 break
 
@@ -59,30 +59,7 @@ class PyAudioEnginePlugin:
             msg = decode_vex_message(frame)
 
             if msg.type == 'CMD':
-                command_type = msg.contents[0]
-
-                if command_type == 'list devices':
-                    devices = self.plugin.get_devices()
-                    frame = create_vex_message(msg.source,
-                                               'microphone',
-                                               'MSG',
-                                               devices)
-
-                    self.communication_socket.send_multipart(frame)
-                elif command_type == 'record':
-                    device_name = msg.contents[1]
-                    device = self.plugin.devices[device_name]
-                    # FIXME
-                    bits = 16
-                    channels  = 2
-                    chunksize = 1024
-                    device.record(chunksize, bits, channels)
-                    self.communication_socket.send(b'')
-                elif command == b'':
-                    self.communication_socket.send(b'')
-                else:
-                    print('WARNING DID NOT PARSE PACKET IN PYAUDIO CORRECTLY, SENDING BLANK')
-                    self.communication_socket.send(b'')
+                self.command_manager.handle_command(msg)
 
 
     def get_devices(self, device_type='all'):
@@ -243,29 +220,3 @@ class PyAudioDevice:
                                          " '%s': '%s' (Errno: %d)", self.slug,
                                          strerror, errno)
             self._engine.messaging.send_multipart(data_list)
-
-def main(context=None,
-         communication_address='',
-         audio_address=''):
-
-    engine = PyAudioEnginePlugin(context,
-                                 communication_address,
-                                 audio_address)
-
-    engine.run()
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('communication_address',
-                        action='store',
-                        default='inproc://microphone')
-
-    parser.add_argument('audio_address',
-                        action='store',
-                        default='tcp://127.0.0.1:5556')
-
-    args = parser.parse_args()
-
-    main(communication_address=args.communication_address,
-         audio_address=args.audio_address)

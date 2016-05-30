@@ -35,7 +35,7 @@ def main(context=None, *args, **kwargs):
     # Also assume that microphones may be physcially displaced from each other
     # which means that they might record simultaneously
     messaging = Messaging(settings)
-    audio_driver = AudioDriver(settings, messaging)
+    audio_driver = AudioDriver(messaging, settings)
 
     audio_driver.run()
 
