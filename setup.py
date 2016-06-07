@@ -10,8 +10,8 @@ with open(os.path.join(directory, 'README.rst')) as f:
 
 setup(
     name="microphone",
-    version='0.1.0',
-    description='Text to Speech for python',
+    version='0.1.1',
+    description='Sending microphone data using ZeroMQ',
     # long_description=long_description,
     url='https://github.com/benhoff/microphone',
     license='GPL3',
@@ -36,7 +36,8 @@ setup(
         'PyAudio',
         'pyzmq',
         'pyyaml',
-        'vexbot'
+        'vexbot',
+        'vexmessage',
         ],
 
     extras_require={
