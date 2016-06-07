@@ -44,23 +44,26 @@ class PyAudio:
 
     def run(self):
         messaging = self.messaging
+        # TODO: create better type here
+        startup_frame = create_vex_message('',
+                                           'microphone',
+                                           'NOTICE',
+                                           ('Starting up the microphone!',))
+
+        messaging.publish_socket.send_multipart(startup_frame)
+
         while True:
             # NOTE: `frame` is a list of byte strings
             # Once we recv here, MUST reply in order to loop again!
             try:
-                frame = messaging.communication_socket.recv_multipart()
+                frame = self.messaging.subscribe_socket.recv_multipart()
             except KeyboardInterrupt:
                 break
-
-            # NOTE: pretty sure there will be two id's
-            # 1st id, should be the request socket, and the second should be
-            # the dealer
 
             msg = decode_vex_message(frame)
 
             if msg.type == 'CMD':
                 self.command_manager.handle_command(msg)
-
 
     def get_devices(self, device_type='all'):
         num_devices = self._pyaudio.get_device_count()
@@ -219,4 +222,6 @@ class PyAudioDevice:
                     self._logger.warning("IO error while reading from device" +
                                          " '%s': '%s' (Errno: %d)", self.slug,
                                          strerror, errno)
-            self._engine.messaging.send_multipart(data_list)
+
+            frame = create_vex_message('', 'microphone', 'AUDIO', data_list)
+            self._engine.messaging.audio_socket.send_multipart(frame)

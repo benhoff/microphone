@@ -26,8 +26,10 @@ def main(context=None, *args, **kwargs):
 
     audio_driver = settings.get('audio_driver', 'pyaudio')
 
+    # FIXME: No idea what error the index command would throw
+    # if the index isn't found
     audio_driver_index = names.index(audio_driver)
-    # NOTE: this is a class
+    # NOTE: `AudioDriver` is a class
     AudioDriver = plugins[audio_driver_index]
 
     # NOTE: Assume that a computer will only use one audio driver?
@@ -38,7 +40,6 @@ def main(context=None, *args, **kwargs):
     audio_driver = AudioDriver(messaging, settings)
 
     audio_driver.run()
-
 
 
 def _get_config():
