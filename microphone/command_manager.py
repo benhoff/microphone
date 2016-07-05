@@ -7,16 +7,17 @@ class CommandManager:
         self.messaging = messaging
 
     def handle_command(self, msg):
-        command = msg.contents[0]
+        command = msg.contents.get('command')
 
         if command == 'list devices':
             devices = self.audio_driver.get_devices()
             frame = create_vex_message(msg.source,
                                        'microphone',
-                                       'MSG',
-                                       devices)
+                                       'RSP',
+                                       response=devices,
+                                       original=command)
 
-            messaging.communication_socket.send_multipart(frame)
+            self.messaging.communication_socket.send_multipart(frame)
         elif command == 'record':
             device = self.audio_driver.get_default_device()
 

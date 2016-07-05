@@ -1,7 +1,5 @@
 import zmq
 
-from vexmessage import create_vex_message, decode_vex_message
-
 
 class Messaging:
     def __init__(self, settings):

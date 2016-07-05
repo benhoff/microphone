@@ -45,10 +45,10 @@ class PyAudio:
     def run(self):
         messaging = self.messaging
         # TODO: create better type here
-        startup_frame = create_vex_message('',
+        startup_frame = create_vex_message(message.source,
                                            'microphone',
-                                           'NOTICE',
-                                           ('Starting up the microphone!',))
+                                           'STATUS',
+                                           status='recording')
 
         messaging.publish_socket.send_multipart(startup_frame)
 
@@ -223,5 +223,5 @@ class PyAudioDevice:
                                          " '%s': '%s' (Errno: %d)", self.slug,
                                          strerror, errno)
 
-            frame = create_vex_message('', 'microphone', 'AUDIO', data_list)
+            frame = create_vex_message('', 'microphone', 'AUDIO', audio=data_list)
             self._engine.messaging.audio_socket.send_multipart(frame)

@@ -1,5 +1,3 @@
-import argparse
-
 import pluginmanager
 from vexbot.argenvconfig import ArgEnvConfig
 
@@ -47,7 +45,6 @@ def _get_config():
     config.add_argument('--settings_path',
                         default='settings.yml',
                         action='store')
-
 
     return config
 
