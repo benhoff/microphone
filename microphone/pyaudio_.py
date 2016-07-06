@@ -196,6 +196,7 @@ class PyAudioDevice:
             """
 
     def record(self, chunksize, *args):
+        channels = args[1]
         with self.open_stream(*args, chunksize=chunksize,
                               output=False) as stream:
 
@@ -204,9 +205,6 @@ class PyAudioDevice:
             steps = int(rate/chunksize * record_seconds)
             data_list = []
             # NOTE: need the rate info and sample width for ASR
-            data_list.append(rate)
-            data_list.append(self._sample_width)
-
             for _ in range(steps):
                 try:
                     data_list.append(stream.read(chunksize))
@@ -223,5 +221,12 @@ class PyAudioDevice:
                                          " '%s': '%s' (Errno: %d)", self.slug,
                                          strerror, errno)
 
-            frame = create_vex_message('', 'microphone', 'AUDIO', audio=data_list)
+            frame = create_vex_message('',
+                                       'microphone',
+                                       'AUDIO',
+                                       audio=data_list,
+                                       number_channels=channels,
+                                       sample_width=self._sample_width,
+                                       sample_rate=rate)
+
             self._engine.messaging.audio_socket.send_multipart(frame)
