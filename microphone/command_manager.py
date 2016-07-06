@@ -1,4 +1,5 @@
 from vexmessage import create_vex_message
+import pprint
 
 
 class CommandManager:
@@ -14,10 +15,10 @@ class CommandManager:
             frame = create_vex_message(msg.source,
                                        'microphone',
                                        'RSP',
-                                       response=devices,
+                                       response=pprint.pformat(devices),
                                        original=command)
 
-            self.messaging.communication_socket.send_multipart(frame)
+            self.messaging.publish_socket.send_multipart(frame)
         elif command == 'record':
             device = self.audio_driver.get_default_device()
 
