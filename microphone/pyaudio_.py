@@ -45,7 +45,7 @@ class PyAudio:
     def run(self):
         messaging = self.messaging
         # TODO: create better type here
-        startup_frame = create_vex_message(message.source,
+        startup_frame = create_vex_message('',
                                            'microphone',
                                            'STATUS',
                                            status='recording')
