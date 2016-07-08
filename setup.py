@@ -10,7 +10,7 @@ with open(os.path.join(directory, 'README.rst')) as f:
 
 setup(
     name="microphone",
-    version='0.2.1',
+    version='0.2.2',
     description='Sending microphone data using ZeroMQ',
     # long_description=long_description,
     url='https://github.com/benhoff/microphone',
@@ -27,6 +27,8 @@ setup(
     keywords='sound capture to text',
     author='Ben Hoff',
     author_email='beohoff@gmail.com',
+    package_data={'microphone':['resources/congo.wav',
+                                'resources/done.wav',]},
     entry_points={'microphone.audioengines': ['pyaudio = microphone.pyaudio_:PyAudio',],
                   'console_scripts': ['microphone-python = microphone.__main__:main'],
                   'vexbot.adapters': ['microphone = microphone.__main__']},

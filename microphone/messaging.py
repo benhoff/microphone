@@ -1,4 +1,5 @@
 import zmq
+from vexmessage import create_vex_message, decode_vex_message
 
 
 class Messaging:
@@ -22,3 +23,19 @@ class Messaging:
         self.publish_socket.connect(publish_address)
         self.subscribe_socket.connect(subscribe_address)
         self.audio_socket.connect(audio_publish_address)
+
+    def send_response(self, target, **contents):
+        frame = create_vex_message(target,
+                                   'microphone',
+                                   'RSP',
+                                   **contents)
+
+        self.publish_socket.send_multipart(frame)
+
+    def send_audio(self, target, **contents):
+        frame = create_vex_message(target,
+                                   'microphone',
+                                   'AUDIO',
+                                   **contents)
+
+        self.audio_socket.send_multipart(frame)

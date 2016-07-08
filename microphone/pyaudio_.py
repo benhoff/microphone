@@ -4,6 +4,7 @@ import wave
 import logging
 import argparse
 import contextlib
+from os import path
 
 import pyaudio
 import zmq
@@ -25,13 +26,13 @@ def bits_to_samplefmt(bits):
 
 class PyAudio:
     def __init__(self, messaging, settings):
+        self._pyaudio = pyaudio.PyAudio()
         self.messaging = messaging
         self.command_manager = CommandManager(self, messaging)
         self._logger = logging.getLogger(__name__)
         self._logger.info("Initializing PyAudio. ALSA/Jack error messages " +
                           "that pop up during this process are normal and " +
                           "can usually be safely ignored.")
-        self._pyaudio = pyaudio.PyAudio()
         # NOTE: pyaudio SPAMS the terminal, this seperates everything
         print('\n')
         self._logger.info("Initialization of PyAudio engine finished")
@@ -87,11 +88,15 @@ class PyAudio:
     def invoke_device(self):
         pass
 
-    def get_default_device(self):
+    def get_default_output_device(self):
+        info = self._pyaudio.get_default_output_device_info()
+        return PyAudioDevice(self, info)
+
+    def get_default_device(self, type='input'):
         try:
             info = self._pyaudio.get_default_input_device_info()
         except IOError:
-            devices = self.get_devices(device_type='input')
+            devices = self.get_devices(device_type=type)
             if len(devices) == 0:
                 msg = 'No %s devices available!' % direction
                 self._logger.warning(msg)
@@ -118,7 +123,26 @@ class PyAudioDevice:
         self._max_input_channels = info['maxInputChannels']
         # FIXME
         self._sample_width = self._engine._pyaudio.get_sample_size(pyaudio.paInt16)
+        self._default_sample_rate = int(self.info['defaultSampleRate'])
+        res_file = path.abspath(path.join(path.dirname(__file__),
+                                           'resources'))
 
+        wave_file = path.join(res_file, 'congo.wav')
+
+        wf = wave.open(wave_file, 'rb')
+
+        self._output_rate = wf.getframerate()
+        self._output_format = wf.getsampwidth()
+        self._output_channels = wf.getnchannels()
+        self._output_file = wave_file
+        wf.close()
+
+        close_file = path.join(res_file, 'done.wav')
+        wf = wave.open(close_file, 'rb')
+        self._close_rate = wf.getframerate()
+        self._close_format = wf.getsampwidth()
+        self._close_channels = wf.getnchannels()
+        self._close_file = close_file
 
     def supports_format(self, bits, channels, rate, output=False):
         req_dev_type = ('output' if output else 'input')
@@ -195,6 +219,40 @@ class PyAudioDevice:
                                "output" if output else "input", self.slug)
             """
 
+    def play_beep(self):
+        chunksize = 1024
+        f = self._engine._pyaudio.get_format_from_width(self._output_format)
+        stream = self._engine._pyaudio.open(format=f,
+                                    channels = self._output_channels,
+                                    rate = self._output_rate,
+                                    output=True)
+
+        wf = wave.open(self._output_file)
+        data = wf.readframes(chunksize)
+        while len(data) > 0:
+            stream.write(data)
+            data = wf.readframes(chunksize)
+
+        stream.stop_stream()
+        stream.close()
+
+    def play_done(self):
+        chunksize = 1024
+        f = self._engine._pyaudio.get_format_from_width(self._close_format)
+        stream = self._engine._pyaudio.open(format=f,
+                channels = self._close_channels,
+                rate = self._output_rate,
+                output=True)
+
+        wf = wave.open(self._close_file)
+        data = wf.readframes(chunksize)
+        while len(data) > 0:
+            stream.write(data)
+            data = wf.readframes(chunksize)
+
+        stream.stop_stream()
+        stream.close()
+
     def record(self, chunksize, *args):
         channels = args[1]
         with self.open_stream(*args, chunksize=chunksize,
@@ -210,7 +268,7 @@ class PyAudioDevice:
                     data_list.append(stream.read(chunksize))
                 except IOError as e:
                     if type(e.errno) is not int:
-                        # Simple hack to work around the fact that the
+                        # Simple hack to work around the fact that thmt_from_width
                         # errno/strerror arguments were swapped in older
                         # PyAudio versions. This was fixed in upstream
                         # commit 1783aaf9bcc6f8bffc478cb5120ccb6f5091b3fb.
@@ -221,12 +279,4 @@ class PyAudioDevice:
                                          " '%s': '%s' (Errno: %d)", self.slug,
                                          strerror, errno)
 
-            frame = create_vex_message('',
-                                       'microphone',
-                                       'AUDIO',
-                                       audio=data_list,
-                                       number_channels=channels,
-                                       sample_width=self._sample_width,
-                                       sample_rate=rate)
-
-            self._engine.messaging.audio_socket.send_multipart(frame)
+            return data_list
