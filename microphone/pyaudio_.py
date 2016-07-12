@@ -279,4 +279,4 @@ class PyAudioDevice:
                                          " '%s': '%s' (Errno: %d)", self.slug,
                                          strerror, errno)
 
-            return data_list
+            return b"".join(data_list)
