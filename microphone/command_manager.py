@@ -22,7 +22,7 @@ class CommandManager:
 
         elif command == 'record':
             bits = msg.contents.get('bits', 16)
-            channels = msg.contents.get('channels', 2)
+            channels = msg.contents.get('channels', 1)
             chunksize = msg.contents.get('chunksize', 1024)
 
             beeper = self._devices['output']

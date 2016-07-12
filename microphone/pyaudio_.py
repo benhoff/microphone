@@ -1,3 +1,4 @@
+import io
 import sys
 import time
 import wave
@@ -261,11 +262,11 @@ class PyAudioDevice:
             record_seconds = 5
             rate = int(self.info['defaultSampleRate'])
             steps = int(rate/chunksize * record_seconds)
-            data_list = []
+            data_list = io.BytesIO()
             # NOTE: need the rate info and sample width for ASR
             for _ in range(steps):
                 try:
-                    data_list.append(stream.read(chunksize))
+                    data_list.write(stream.read(chunksize))
                 except IOError as e:
                     if type(e.errno) is not int:
                         # Simple hack to work around the fact that thmt_from_width
@@ -279,4 +280,4 @@ class PyAudioDevice:
                                          " '%s': '%s' (Errno: %d)", self.slug,
                                          strerror, errno)
 
-            return b"".join(data_list)
+            return data_list.getvalue()
