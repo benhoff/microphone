@@ -1,9 +1,13 @@
 import zmq
-from vexmessage import create_vex_message, decode_vex_message
+from vexmessage import create_vex_message
 
 
 class Messaging:
-    def __init__(self, settings):
+    def __init__(self,
+                 publish_address: str,
+                 subscribe_address: str,
+                 audio_publish_address: str):
+
         context = zmq.Context()
         # Pub/Sub sockets communicate on the vexbot node
         self.publish_socket = context.socket(zmq.PUB)
@@ -15,10 +19,6 @@ class Messaging:
         # audio socket should connect to the speech recongnition node
         # TODO: If I have multiple devices recording simulatenously
         # how am I going to handle that?
-
-        publish_address = settings.get('publish_address')
-        subscribe_address = settings.get('subscribe_address')
-        audio_publish_address = settings.get('audio_publish_address')
 
         self.publish_socket.connect(publish_address)
         self.subscribe_socket.connect(subscribe_address)

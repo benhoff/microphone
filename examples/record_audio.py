@@ -26,14 +26,18 @@ def _create_file():
     finally:
         f.close()
 
-
+# the server
 def main():
-    # using messaging library. Create the sockets for messaging
+    # using zmq messaging library. First create a context
     context = zmq.Context()
+    # the server is going to listen for commands on a subscription socket
     request_socket = context.socket(zmq.REQ)
     frontend_address = 'tcp://127.0.0.1:6910'
+    # the server is going to push commands on a publish socket
     request_socket.connect(frontend_address)
     audio_socket_address = 'tcp://127.0.0.1:6823'
+    # the server is going to publish audio information on a publish socket
+    # let's create an subscription socket to catch the information.
     audio_socket = context.socket(zmq.SUB)
     audio_socket.bind(audio_socket_address)
     audio_socket.setsockopt(zmq.SUBSCRIBE, b'')

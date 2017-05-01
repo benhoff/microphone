@@ -1,4 +1,3 @@
-from vexmessage import create_vex_message
 import pprint
 
 
