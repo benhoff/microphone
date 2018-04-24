@@ -37,7 +37,7 @@ setup(
 
     packages= find_packages(), # exclude=['docs', 'tests']
     install_requires=[
-        'pluginmanager>=0.4.1'
+        'pluginmanager>=0.4.1',
         'PyAudio',
         'pyzmq',
         'vexmessage',
