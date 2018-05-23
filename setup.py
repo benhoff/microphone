@@ -10,7 +10,7 @@ with open(os.path.join(directory, 'README.rst')) as f:
 
 setup(
     name="microphone",
-    version='0.3.0',
+    version='0.3.1',
     description='Sending microphone data using ZeroMQ',
     # long_description=long_description,
     url='https://github.com/benhoff/microphone',
@@ -44,6 +44,6 @@ setup(
         ],
 
     extras_require={
-        'dev': ['flake8']
+        'dev': ['flake8', 'wheel', 'twine']
         },
 )
